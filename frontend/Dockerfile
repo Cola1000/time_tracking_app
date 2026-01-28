@@ -1,5 +1,8 @@
 FROM node:18-alpine as builder
 
+ARG VITE_THEME=dark
+ENV VITE_THEME=$VITE_THEME
+
 WORKDIR /app
 
 COPY package*.json ./

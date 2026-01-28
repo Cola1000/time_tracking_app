@@ -5,6 +5,12 @@ echo "  Time Tracking App - Startup Script"
 echo "========================================"
 echo ""
 
+# Parse theme argument (default: dark)
+THEME="dark"
+if [ "$1" = "light" ] || [ "$1" = "dark" ]; then
+    THEME="$1"
+fi
+
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
     echo "[ERROR] Docker is not installed"
@@ -21,11 +27,39 @@ fi
 
 echo "[OK] Docker is running"
 echo ""
-echo "Starting Time Tracking App..."
+echo "Starting Time Tracking App with $THEME theme..."
 echo ""
 echo "The app will be available at: http://localhost:5173"
 echo "Press Ctrl+C to stop the app"
 echo ""
 
+# Set theme environment variable for Docker
+export VITE_THEME="$THEME"
+
 # Build and start containers
-docker-compose up --build
+docker-compose up --build -d
+
+# Wait for containers to be ready
+echo ""
+echo "Waiting for app to start..."
+sleep 5
+
+# Open browser based on OS
+echo "Opening browser..."
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    open http://localhost:5173
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux
+    xdg-open http://localhost:5173 2>/dev/null || echo "Please open http://localhost:5173 in your browser"
+else
+    # Windows WSL
+    cmd.exe /c start http://localhost:5173 2>/dev/null || echo "Please open http://localhost:5173 in your browser"
+fi
+
+echo ""
+echo "App is running! Press Ctrl+C to stop."
+echo ""
+
+# Keep script running
+tail -f /dev/null

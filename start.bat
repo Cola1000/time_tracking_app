@@ -6,6 +6,11 @@ echo   Time Tracking App - Startup Script
 echo ========================================
 echo.
 
+REM Parse theme argument (default: dark)
+set THEME=dark
+if "%1"=="light" set THEME=light
+if "%1"=="dark" set THEME=dark
+
 REM Check if Docker is installed
 docker --version >nul 2>&1
 if errorlevel 1 (
@@ -26,10 +31,27 @@ if errorlevel 1 (
 
 echo [OK] Docker is running
 echo.
-echo Starting Time Tracking App...
+echo Starting Time Tracking App with %THEME% theme...
+echo.
+echo The app will be available at: http://localhost:5173
+echo Press Ctrl+C to stop the app
 echo.
 
-REM Build and start containers
-docker-compose up --build
+REM Set theme environment variable for Docker
+set VITE_THEME=%THEME%
 
+REM Build and start containers
+docker-compose up --build -d
+
+REM Wait for containers to be ready
+echo.
+echo Waiting for app to start...
+timeout /t 5 /nobreak >nul
+
+REM Open browser
+echo Opening browser...
+start http://localhost:5173
+
+echo.
+echo App is running! Close this window or press Ctrl+C to stop.
 pause

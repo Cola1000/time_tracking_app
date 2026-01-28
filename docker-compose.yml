@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -18,6 +16,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_THEME=${VITE_THEME:-dark}
     ports:
       - "5173:5173"
     depends_on:
@@ -26,6 +26,7 @@ services:
       - time-tracker-network
     environment:
       - VITE_API_URL=http://localhost:8000/api
+      - VITE_THEME=${VITE_THEME:-dark}
 
 networks:
   time-tracker-network:

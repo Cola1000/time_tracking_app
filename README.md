@@ -8,15 +8,20 @@ A local time tracking application built with FastAPI (Python) backend, Svelte fr
 ✅ **Manual Entry** - Create time entries manually with custom times  
 ✅ **Projects & Categories** - Organize time entries by project and category  
 ✅ **Weekly Calendar View** - Toggl-style calendar divided by week and day  
-✅ **Daily Reports** - View total time per day with breakdown by project/category  
+✅ **Daily Reports** - Bar and pie charts showing time breakdown  
+✅ **Project Overview** - View all projects with expandable entry history  
+✅ **Light/Dark Mode** - Toggle between themes via UI or startup flag  
+✅ **Custom Projects** - Add and persist custom projects using localStorage  
 ✅ **JSON Storage** - All data saved locally as JSON files (no database needed)  
 ✅ **Responsive Design** - Works on desktop and mobile browsers  
+✅ **Auto Browser Launch** - Automatically opens browser on startup  
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python)
-- **Frontend**: Svelte + Vite
-- **Storage**: JSON files (local)
+- **Backend**: FastAPI (Python 3.11)
+- **Frontend**: Svelte 4 + Vite 5
+- **Charts**: Chart.js
+- **Storage**: JSON files (local) + localStorage
 - **Containerization**: Docker & Docker Compose
 
 ## Project Structure
@@ -38,27 +43,79 @@ time_tracking_app/
 │   │   ├── components/
 │   │   │   ├── Sidebar.svelte
 │   │   │   ├── Calendar.svelte
-│   │   │   └── Timer.svelte
-│   │   ├── styles/
+│   │   │   ├── Timer.svelte
+│   │   │   ├── Reports.svelte
+│   │   │   └── Projects.svelte
+│   │   ├── styles/         # CSS modules
+│   │   │   ├── theme.css   # Theme variables
+│   │   │   ├── calendar.css
+│   │   │   ├── sidebar.css
+│   │   │   ├── timer.css
+│   │   │   ├── reports.css
+│   │   │   └── projects.css
+│   │   ├── stores/
+│   │   │   └── theme.js    # Theme state management
+│   │   ├── utils/
+│   │   │   └── storage.js  # localStorage utilities
 │   │   └── main.js
 │   ├── package.json
 │   ├── vite.config.js
 │   └── Dockerfile
-└── docker-compose.yml      # Docker orchestration
+├── docker-compose.yml      # Docker orchestration
+├── start.bat              # Windows startup script
+└── start.sh               # Linux/Mac startup script
 ```
 
 ## Quick Start
 
-### Option 1: Using Docker Compose (Recommended)
+### Option 1: Using Startup Scripts (Recommended)
+
+**Windows:**
+```bash
+# Start with dark theme (default)
+.\start.bat
+
+# Start with light theme
+.\start.bat light
+
+# Start with dark theme (explicit)
+.\start.bat dark
+```
+
+**Linux/Mac:**
+```bash
+# Make script executable (first time only)
+chmod +x start.sh
+
+# Start with dark theme (default)
+./start.sh
+
+# Start with light theme
+./start.sh light
+
+# Start with dark theme (explicit)
+./start.sh dark
+```
+
+The script will:
+- Check if Docker is running
+- Build and start both containers
+- Automatically open your browser to http://localhost:5173
+- Display the app in your chosen theme
+
+### Option 2: Using Docker Compose Manually
 
 ```bash
-# Start both backend and frontend
+# Start both backend and frontend with dark theme (default)
 docker-compose up --build
+
+# Start with light theme
+VITE_THEME=light docker-compose up --build
 
 # App will be available at http://localhost:5173
 ```
 
-### Option 2: Local Development
+### Option 3: Local Development
 
 #### Backend
 ```bash
@@ -75,6 +132,21 @@ npm install
 npm run dev
 # Frontend runs on http://localhost:5173
 ```
+
+## Theme System
+
+The app supports both light and dark modes:
+
+### Switching Themes
+
+1. **Via Startup Script**: Pass `light` or `dark` as an argument (see Quick Start)
+2. **Via UI**: Click the theme toggle button at the bottom of the sidebar
+3. **Via Environment Variable**: Set `VITE_THEME=light` or `VITE_THEME=dark`
+
+Themes are managed through:
+- CSS custom properties in `frontend/src/styles/theme.css`
+- Svelte store in `frontend/src/stores/theme.js`
+- localStorage for persistence across sessions
 
 ## API Endpoints
 
