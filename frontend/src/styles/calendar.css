@@ -249,7 +249,7 @@
 
 .entry-project {
   font-weight: 800;
-  color: #ffffff;
+  color: #ffffff !important;
   text-shadow: 
     0 0 3px rgba(0, 0, 0, 0.9),
     0 1px 4px rgba(0, 0, 0, 0.7),
@@ -259,7 +259,7 @@
 
 .entry-category {
   font-size: 11px;
-  color: #ffffff;
+  color: #b3b3b3 !important;
   opacity: 1;
   text-shadow: 
     0 0 3px rgba(0, 0, 0, 0.9),
