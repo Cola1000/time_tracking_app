@@ -226,11 +226,12 @@
   cursor: pointer;
   transition: all 0.2s;
   z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .time-entry:hover {
-  opacity: 0.9;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0.95;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
 }
 
@@ -238,17 +239,20 @@
   text-align: center;
   font-size: 11px;
   line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .entry-project {
   font-weight: 700;
   color: var(--entry-text);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .entry-category {
   font-size: 10px;
-  color: #f5deb3;
-  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.95);
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .entry-duration {

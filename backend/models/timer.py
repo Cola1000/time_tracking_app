@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict
 from datetime import datetime
 
 class TimerEntry(BaseModel):
@@ -18,6 +18,25 @@ class TimerCreate(BaseModel):
     description: Optional[str] = None
     start_time: datetime
     end_time: Optional[datetime] = None
+    duration: int
+    date: str  # YYYY-MM-DD format - explicit date to avoid timezone issues
+
+class DayActivitySummary(BaseModel):
+    date: str
+    total_duration: int  # in seconds
+    entries: list[TimerEntry]
+
+class ProjectListSync(BaseModel):
+    projects: List[str]
+
+class CategoryListSync(BaseModel):
+    categories: List[str]
+
+class SettingName(BaseModel):
+    name: str
+
+class ColorUpdate(BaseModel):
+    color: str
     duration: int
     date: str  # YYYY-MM-DD format - explicit date to avoid timezone issues
 

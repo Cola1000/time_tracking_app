@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import axios from 'axios';
   import { Chart } from 'chart.js/auto';
+  import { getColors } from '../utils/storage';
   import '../styles/reports.css';
 
   const API_URL = 'http://localhost:8000/api';
@@ -15,6 +16,7 @@
   let pieChartCanvas;
   let barChartInstance;
   let pieChartInstance;
+  let colors = { project_colors: {}, category_colors: {} };
 
   function getWeekStart(date) {
     const d = new Date(date);
@@ -276,8 +278,17 @@
     });
   }
 
+  async function loadColors() {
+    try {
+      colors = await getColors();
+    } catch (error) {
+      console.error('Error loading colors:', error);
+    }
+  }
+
   onMount(() => {
     loadWeekData();
+    loadColors();
   });
 
   // Redraw bar chart when canvas becomes available and we have data
@@ -320,10 +331,12 @@
           <h3>Daily Entries</h3>
           <div class="entries-list">
             {#each dayEntries as entry (entry.id)}
-              <div class="entry-card">
+              {@const projectColor = colors.project_colors[entry.project] || '#808080'}
+              {@const categoryColor = colors.category_colors[entry.category] || '#808080'}
+              <div class="entry-card" style="border-left-color: {projectColor}; background: linear-gradient(90deg, rgba({parseInt(projectColor.slice(1,3),16)},${parseInt(projectColor.slice(3,5),16)},${parseInt(projectColor.slice(5,7),16)},0.1) 0%, rgba(${parseInt(categoryColor.slice(1,3),16)},${parseInt(categoryColor.slice(3,5),16)},${parseInt(categoryColor.slice(5,7),16)},0.1) 100%)">
                 <div class="entry-header">
-                  <span class="project-tag">{entry.project || 'Uncategorized'}</span>
-                  <span class="category-tag">{entry.category || 'Uncategorized'}</span>
+                  <span class="project-tag" style="background-color: {projectColor}; color: #fff;">{entry.project || 'Uncategorized'}</span>
+                  <span class="category-tag" style="background-color: {categoryColor}; color: #fff;">{entry.category || 'Uncategorized'}</span>
                 </div>
                 {#if entry.description}
                   <p class="entry-description">{entry.description}</p>

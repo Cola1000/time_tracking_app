@@ -3,6 +3,7 @@
   import Modal from './Modal.svelte';
   import { onMount } from 'svelte';
   import axios from 'axios';
+  import { getColors } from '../utils/storage';
   import '../styles/calendar.css';
   import '../styles/timer.css';
 
@@ -16,6 +17,7 @@
   let selectedDate = null;
   let selectedEntry = null;
   let selectedTime = null; // Time when clicking on timeline
+  let colors = { project_colors: {}, category_colors: {} };
 
   const API_URL = 'http://localhost:8000/api';
   const MIN_ENTRY_DURATION = 900; // 15 minutes in seconds - entries shorter than this won't display on calendar
@@ -117,11 +119,6 @@
     return weekNum;
   }
 
-  onMount(() => {
-    loadWeekData();
-    setInterval(updateCurrentTime, 60000);
-  });
-
   function openNewEntryModal(date, event = null) {
     let clickedDate = new Date(date);
     
@@ -162,6 +159,20 @@
   function handleEntryDeleted() {
     loadWeekData();
   }
+
+  async function loadColors() {
+    try {
+      colors = await getColors();
+    } catch (error) {
+      console.error('Error loading colors:', error);
+    }
+  }
+
+  onMount(() => {
+    loadWeekData();
+    loadColors();
+    setInterval(updateCurrentTime, 60000);
+  });
 
   $: weekTotal = weekData ? getWeekTotalSeconds() : 0; // Reactively recalculate when weekData changes
 </script>
@@ -231,11 +242,14 @@
                 {#if weekData[formatDate(date)]?.entries}
                   {#each weekData[formatDate(date)].entries as entry (entry.id)}
                     {#if entry.duration >= MIN_ENTRY_DURATION}
+                      {@const projectColor = colors.project_colors[entry.project] || '#808080'}
+                      {@const categoryColor = colors.category_colors[entry.category] || '#808080'}
                       <div
                       class="time-entry"
                       style="
                         top: {getTimePosition(entry.start_time)}px;
                         height: {getDurationMinutes(entry.duration)}px;
+                        background: linear-gradient(135deg, {projectColor} 0%, {categoryColor} 100%);
                       "
                       title="{entry.project} - {entry.category} ({formatDuration(entry.duration)})"
                       on:click={(e) => {
