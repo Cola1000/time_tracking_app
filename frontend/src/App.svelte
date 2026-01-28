@@ -1,8 +1,10 @@
 <script>
+  import { onMount } from 'svelte';
   import Sidebar from './components/Sidebar.svelte';
   import Calendar from './components/Calendar.svelte';
   import Reports from './components/Reports.svelte';
   import Projects from './components/Projects.svelte';
+  import { syncAll } from './utils/storage';
   import './styles/theme.css';
   import './styles/sidebar.css';
   
@@ -16,6 +18,11 @@
   function handleDateChange(date) {
     selectedDate = date;
   }
+
+  onMount(async () => {
+    // Sync projects and categories on app load
+    await syncAll();
+  });
 </script>
 
 <div class="app-container">

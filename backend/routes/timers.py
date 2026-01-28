@@ -8,6 +8,7 @@ import uuid
 router = APIRouter()
 
 DATA_DIR = "data"
+SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
 def get_data_file(date: str) -> str:
     """Get the path to the data file for a given date (YYYY-MM-DD)"""
@@ -200,3 +201,83 @@ def get_week_stats(start_date: str):
         "project_breakdown": projects,
         "category_breakdown": categories
     }
+
+def load_settings() -> dict:
+    """Load settings from file"""
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, 'r') as f:
+            return json.load(f)
+    return {"projects": [], "categories": []}
+
+def save_settings(settings: dict) -> None:
+    """Save settings to file"""
+    with open(SETTINGS_FILE, 'w') as f:
+        json.dump(settings, f, indent=2)
+
+@router.get("/settings/projects", response_model=list)
+def get_projects():
+    """Get all custom projects"""
+    settings = load_settings()
+    return settings.get("projects", [])
+
+@router.post("/settings/projects", response_model=list)
+def add_project(project: dict):
+    """Add a new project"""
+    settings = load_settings()
+    projects = settings.get("projects", [])
+    
+    project_name = project.get("name", "").strip()
+    if project_name and project_name not in projects:
+        projects.append(project_name)
+        settings["projects"] = projects
+        save_settings(settings)
+    
+    return projects
+
+@router.put("/settings/projects", response_model=list)
+def sync_projects(projects_data: dict):
+    """Sync projects list (merge with existing)"""
+    settings = load_settings()
+    existing_projects = set(settings.get("projects", []))
+    new_projects = set(projects_data.get("projects", []))
+    
+    # Merge both lists
+    merged = sorted(list(existing_projects.union(new_projects)))
+    settings["projects"] = merged
+    save_settings(settings)
+    
+    return merged
+
+@router.get("/settings/categories", response_model=list)
+def get_categories():
+    """Get all custom categories"""
+    settings = load_settings()
+    return settings.get("categories", [])
+
+@router.post("/settings/categories", response_model=list)
+def add_category(category: dict):
+    """Add a new category"""
+    settings = load_settings()
+    categories = settings.get("categories", [])
+    
+    category_name = category.get("name", "").strip()
+    if category_name and category_name not in categories:
+        categories.append(category_name)
+        settings["categories"] = categories
+        save_settings(settings)
+    
+    return categories
+
+@router.put("/settings/categories", response_model=list)
+def sync_categories(categories_data: dict):
+    """Sync categories list (merge with existing)"""
+    settings = load_settings()
+    existing_categories = set(settings.get("categories", []))
+    new_categories = set(categories_data.get("categories", []))
+    
+    # Merge both lists
+    merged = sorted(list(existing_categories.union(new_categories)))
+    settings["categories"] = merged
+    save_settings(settings)
+    
+    return merged

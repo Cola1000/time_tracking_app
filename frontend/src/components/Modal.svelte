@@ -75,19 +75,19 @@
     dispatch('close');
   }
 
-  function addProjectHandler() {
+  async function addProjectHandler() {
     const newProject = prompt('Enter new project name:');
     if (newProject && newProject.trim()) {
-      addCustomProject(newProject.trim());
+      await addCustomProject(newProject.trim());
       project = newProject.trim();
       projects = getCustomProjects();
     }
   }
 
-  function addCategoryHandler() {
+  async function addCategoryHandler() {
     const newCategory = prompt('Enter new category name:');
     if (newCategory && newCategory.trim()) {
-      addCustomCategory(newCategory.trim());
+      await addCustomCategory(newCategory.trim());
       category = newCategory.trim();
       categories = getCustomCategories();
     }

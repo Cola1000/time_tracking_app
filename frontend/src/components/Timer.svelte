@@ -111,11 +111,11 @@
     }
   }
 
-  function handleProjectChange(e) {
+  async function handleProjectChange(e) {
     if (e.target.value === '__ADD_NEW__') {
       const newProject = prompt('Enter new project name:');
       if (newProject && newProject.trim()) {
-        addCustomProject(newProject.trim());
+        await addCustomProject(newProject.trim());
         timerStore.setProject(newProject.trim());
         projects = getCustomProjects();
       } else {
@@ -126,11 +126,11 @@
     }
   }
 
-  function handleCategoryChange(e) {
+  async function handleCategoryChange(e) {
     if (e.target.value === '__ADD_NEW__') {
       const newCategory = prompt('Enter new category name:');
       if (newCategory && newCategory.trim()) {
-        addCustomCategory(newCategory.trim());
+        await addCustomCategory(newCategory.trim());
         timerStore.setCategory(newCategory.trim());
         categories = getCustomCategories();
       } else {

@@ -12,7 +12,7 @@ Features:
 
 > **Note**: 
 > - I have not made it responsive yet, so best viewed on desktop browsers.
-> - Categories and Projects are stored in localStorage on the client side. So if you clear browser data, you will lose them. You can re-create them as needed.
+
 
 ## Table of Contents
 - [Requirements](#requirements)
