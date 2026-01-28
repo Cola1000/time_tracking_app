@@ -96,6 +96,8 @@
   }
 
   function drawBarChart() {
+    if (!barChartCanvas) return;
+
     const days = getWeekDays();
     const labels = days.map(d => getDayName(d) + '\n' + getFormattedDate(d));
     const data = days.map(d => {
@@ -108,6 +110,13 @@
     }
 
     const ctx = barChartCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // Enable better rendering quality
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, '#4CAF50');
+    gradient.addColorStop(1, '#45a049');
+
     barChartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -116,36 +125,93 @@
           {
             label: 'Hours Tracked',
             data: data,
-            backgroundColor: '#4CAF50',
-            borderColor: '#45a049',
-            borderWidth: 2,
-            borderRadius: 4,
+            backgroundColor: gradient,
+            borderColor: '#2E7D32',
+            borderWidth: 0,
+            borderRadius: 8,
+            borderSkipped: false,
+            barPercentage: 0.7,
+            categoryPercentage: 0.8,
           },
         ],
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
+        devicePixelRatio: 2,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
         plugins: {
           legend: {
             display: false,
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              size: 14,
+              weight: 'bold',
+            },
+            bodyFont: {
+              size: 13,
+            },
+            padding: 12,
+            cornerRadius: 6,
+            displayColors: false,
+            callbacks: {
+              title: (context) => {
+                return context[0].label.replace('\n', ' ');
+              },
+              label: (context) => {
+                const hours = context.parsed.y;
+                const wholeHours = Math.floor(hours);
+                const minutes = Math.round((hours - wholeHours) * 60);
+                return `${wholeHours}h ${minutes}m tracked`;
+              },
+            },
           },
         },
         scales: {
           y: {
             beginAtZero: true,
+            ticks: {
+              font: {
+                size: 12,
+                weight: '500',
+              },
+              color: '#888',
+              padding: 8,
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)',
+              lineWidth: 1,
+            },
             title: {
               display: true,
               text: 'Hours',
+              font: {
+                size: 14,
+                weight: 'bold',
+              },
+              color: '#aaa',
+              padding: 10,
             },
           },
-        },
-        onClick: (event, elements) => {
-          if (elements.length > 0) {
-            const index = elements[0].index;
-            const date = getWeekDays()[index];
-            selectDay(date);
-          }
+          x: {
+            ticks: {
+              font: {
+                size: 12,
+                weight: '500',
+              },
+              color: '#888',
+              padding: 8,
+            },
+            grid: {
+              display: false,
+            },
+          },
         },
       },
     });
@@ -211,6 +277,11 @@
   onMount(() => {
     loadWeekData();
   });
+
+  // Redraw bar chart when canvas becomes available and we have data
+  $: if (barChartCanvas && weekData && Object.keys(weekData).length > 0) {
+    drawBarChart();
+  }
 </script>
 
 <div class="reports-container">
@@ -223,14 +294,26 @@
   </div>
 
   <div class="charts-section">
-    <div class="bar-chart-container">
-      <h3>Hours per Day</h3>
-      <canvas bind:this={barChartCanvas}></canvas>
-      <p class="chart-hint">Click on a bar to view details for that day</p>
+    <div class="chart-and-selector">
+      <div class="bar-chart-container">
+        <h3>Hours per Day</h3>
+        <canvas bind:this={barChartCanvas}></canvas>
+      </div>
+
+      <div class="day-selector">
+        {#each getWeekDays() as date}
+          <button 
+            class="day-btn {formatDate(date) === selectedDate ? 'active' : ''}"
+            on:click={() => selectDay(date)}
+          >
+            {getDayName(date)}<br/>{getFormattedDate(date)}
+          </button>
+        {/each}
+      </div>
     </div>
 
-    {#if dayEntries.length > 0}
-      <div class="detail-section">
+    <div class="detail-section">
+      {#if dayEntries.length > 0}
         <div class="entries-breakdown">
           <h3>Daily Entries</h3>
           <div class="entries-list">
@@ -261,12 +344,12 @@
           </h3>
           <canvas bind:this={pieChartCanvas}></canvas>
         </div>
-      </div>
-    {:else}
-      <div class="empty-state">
-        <p>No entries for this day</p>
-      </div>
-    {/if}
+      {:else}
+        <div class="empty-section">
+          <p>No entries for this day</p>
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 

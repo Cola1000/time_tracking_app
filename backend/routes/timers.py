@@ -31,6 +31,12 @@ def calculate_total_duration(entries: list) -> int:
     """Calculate total duration from entries in seconds"""
     return sum(entry.get("duration", 0) for entry in entries)
 
+def ensure_total_duration(date: str, day_data: dict) -> dict:
+    """Ensure total_duration matches actual sum of entries"""
+    entries = day_data.get("entries", [])
+    day_data["total_duration"] = calculate_total_duration(entries)
+    return day_data
+
 @router.post("/timers", response_model=TimerEntry)
 def create_timer(timer: TimerCreate):
     """Create a new timer entry"""
@@ -64,6 +70,9 @@ def get_day_timers(date: str):
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
     
     day_data = load_day_data(date)
+    # Ensure total_duration is correct even if entries were manually deleted
+    day_data = ensure_total_duration(date, day_data)
+    save_day_data(date, day_data)  # Save corrected data
     return DayActivitySummary(
         date=date,
         total_duration=day_data.get("total_duration", 0),
@@ -82,6 +91,9 @@ def get_week_timers(start_date: str):
     for i in range(7):
         date = (start + timedelta(days=i)).strftime("%Y-%m-%d")
         day_data = load_day_data(date)
+        # Ensure total_duration is correct even if entries were manually deleted
+        day_data = ensure_total_duration(date, day_data)
+        save_day_data(date, day_data)  # Save corrected data
         week_data[date] = {
             "total_duration": day_data.get("total_duration", 0),
             "entries": day_data.get("entries", [])
@@ -92,18 +104,31 @@ def get_week_timers(start_date: str):
 @router.put("/timers/{entry_id}", response_model=TimerEntry)
 def update_timer(entry_id: str, timer: TimerCreate):
     """Update an existing timer entry"""
-    date = timer.start_time.strftime("%Y-%m-%d")
-    day_data = load_day_data(date)
+    new_date = timer.start_time.strftime("%Y-%m-%d")
     
-    entry_index = None
-    for i, entry in enumerate(day_data["entries"]):
-        if entry["id"] == entry_id:
-            entry_index = i
+    # First, find and delete the old entry from any date (past or future)
+    today = datetime.now()
+    old_date = None
+    # Search 30 days in the past and 30 days in the future
+    for i in range(-30, 31):
+        date = (today + timedelta(days=i)).strftime("%Y-%m-%d")
+        day_data = load_day_data(date)
+        
+        for idx, entry in enumerate(day_data["entries"]):
+            if entry["id"] == entry_id:
+                old_date = date
+                day_data["entries"].pop(idx)
+                day_data["total_duration"] = calculate_total_duration(day_data["entries"])
+                save_day_data(date, day_data)
+                break
+        
+        if old_date:
             break
     
-    if entry_index is None:
+    if not old_date:
         raise HTTPException(status_code=404, detail="Timer entry not found")
     
+    # Create updated entry on new date
     updated_entry = {
         "id": entry_id,
         "project": timer.project,
@@ -112,22 +137,24 @@ def update_timer(entry_id: str, timer: TimerCreate):
         "start_time": timer.start_time.isoformat(),
         "end_time": timer.end_time.isoformat() if timer.end_time else None,
         "duration": timer.duration,
-        "date": date
+        "date": new_date
     }
     
-    day_data["entries"][entry_index] = updated_entry
-    day_data["total_duration"] = calculate_total_duration(day_data["entries"])
-    save_day_data(date, day_data)
+    new_day_data = load_day_data(new_date)
+    new_day_data["entries"].append(updated_entry)
+    new_day_data["total_duration"] = calculate_total_duration(new_day_data["entries"])
+    save_day_data(new_date, new_day_data)
     
     return TimerEntry(**updated_entry)
 
 @router.delete("/timers/{entry_id}")
 def delete_timer(entry_id: str):
     """Delete a timer entry"""
-    # Search through all recent dates to find and delete the entry
+    # Search through all recent and future dates to find and delete the entry
     today = datetime.now()
-    for i in range(30):  # Search last 30 days
-        date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+    # Search 30 days in the past and 30 days in the future
+    for i in range(-30, 31):
+        date = (today + timedelta(days=i)).strftime("%Y-%m-%d")
         day_data = load_day_data(date)
         
         for idx, entry in enumerate(day_data["entries"]):

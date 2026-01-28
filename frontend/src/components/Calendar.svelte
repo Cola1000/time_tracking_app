@@ -1,5 +1,6 @@
 <script>
   import Timer from './Timer.svelte';
+  import Modal from './Modal.svelte';
   import { onMount } from 'svelte';
   import axios from 'axios';
   import '../styles/calendar.css';
@@ -7,11 +8,17 @@
 
   let weekStart = getWeekStart(new Date());
   let weekData = {};
+  let weekTotal = 0;
   let loading = false;
   let currentTime = new Date();
   let timelineHours = Array.from({ length: 24 }, (_, i) => i);
+  let modalOpen = false;
+  let selectedDate = null;
+  let selectedEntry = null;
+  let selectedTime = null; // Time when clicking on timeline
 
   const API_URL = 'http://localhost:8000/api';
+  const MIN_ENTRY_DURATION = 1800; // 30 minutes in seconds - entries shorter than this won't display on calendar
 
   function getWeekStart(date) {
     const d = new Date(date);
@@ -43,8 +50,12 @@
 
   function getWeekTotalSeconds() {
     let total = 0;
+    if (!weekData || Object.keys(weekData).length === 0) {
+      return 0;
+    }
     Object.keys(weekData).forEach(key => {
-      total += weekData[key]?.total_duration || 0;
+      const dayTotal = weekData[key]?.total_duration || 0;
+      total += dayTotal;
     });
     return total;
   }
@@ -110,18 +121,65 @@
     loadWeekData();
     setInterval(updateCurrentTime, 60000);
   });
+
+  function openNewEntryModal(date, event = null) {
+    let clickedDate = new Date(date);
+    
+    // If click event provided, calculate the time based on click position
+    if (event) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickY = event.clientY - rect.top;
+      const minutes = Math.round(clickY / 60 * 60); // Convert pixel position to minutes
+      clickedDate.setHours(Math.floor(minutes / 60), minutes % 60, 0);
+    }
+    
+    selectedDate = clickedDate;
+    selectedTime = clickedDate;
+    selectedEntry = null;
+    modalOpen = true;
+  }
+
+  function openEntryModal(entry) {
+    selectedEntry = entry;
+    selectedDate = null;
+    modalOpen = true;
+  }
+
+  function handleModalClose() {
+    modalOpen = false;
+    selectedDate = null;
+    selectedEntry = null;
+  }
+
+  function handleEntryCreated() {
+    loadWeekData();
+  }
+
+  function handleEntryUpdated() {
+    loadWeekData();
+  }
+
+  function handleEntryDeleted() {
+    loadWeekData();
+  }
+
+  $: weekTotal = weekData ? getWeekTotalSeconds() : 0; // Reactively recalculate when weekData changes
 </script>
 
 <div class="calendar-container">
   <div class="top-bar">
     <div class="week-selector">
-      <button on:click={previousWeek}>‹</button>
+      <button on:click={previousWeek}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
       <span>This week - W{getWeekNumber(weekStart)}</span>
-      <button on:click={nextWeek}>›</button>
+      <button on:click={nextWeek}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
     </div>
 
     <div class="week-total">
-      WEEK TOTAL: {formatDuration(getWeekTotalSeconds())}
+      WEEK TOTAL: {formatDuration(weekTotal)}
     </div>
 
     <div class="view-selector">
@@ -140,62 +198,85 @@
     </div>
 
     <div class="timeline-wrapper">
-      <div class="time-labels">
-        {#each timelineHours as hour}
-          <div class="time-label">
-            {String(hour).padStart(2, '0')}:00
+      <div class="day-headers-row">
+        <div class="day-header-placeholder"></div>
+        {#each getWeekDays() as date (formatDate(date))}
+          <div class="day-header">
+            <div class="day-name">{getDayName(date)}</div>
+            <div class="day-number">{getFormattedDate(date)}</div>
+            <div class="day-time">
+              {weekData[formatDate(date)]?.total_duration
+                ? formatDuration(weekData[formatDate(date)].total_duration)
+                : '0:00:00'}
+            </div>
           </div>
         {/each}
       </div>
 
-      <div class="days-grid">
-        {#each getWeekDays() as date (formatDate(date))}
-          <div class="day-column">
-            <div class="day-header">
-              <div class="day-name">{getDayName(date)}</div>
-              <div class="day-number">{getFormattedDate(date)}</div>
-              <div class="day-time">
-                {weekData[formatDate(date)]?.total_duration
-                  ? formatDuration(weekData[formatDate(date)].total_duration)
-                  : '0:00:00'}
+      <div class="timeline-scroll-container">
+        <div class="time-labels">
+          {#each timelineHours as hour}
+            <div class="time-label">
+              {String(hour).padStart(2, '0')}:00
+            </div>
+          {/each}
+        </div>
+
+        <div class="days-grid">
+          {#each getWeekDays() as date (formatDate(date))}
+            <div class="day-column">
+              <div class="day-timeline" on:click={(e) => openNewEntryModal(date, e)}>
+                {#each timelineHours as hour}
+                  <div class="hour-row"></div>
+                {/each}
+
+                {#if weekData[formatDate(date)]?.entries}
+                  {#each weekData[formatDate(date)].entries as entry (entry.id)}
+                    {#if entry.duration >= MIN_ENTRY_DURATION}
+                      <div
+                      class="time-entry"
+                      style="
+                        top: {getTimePosition(entry.start_time)}px;
+                        height: {getDurationMinutes(entry.duration)}px;
+                      "
+                      title="{entry.project} - {entry.category} ({formatDuration(entry.duration)})"
+                      on:click={(e) => {
+                        e.stopPropagation();
+                        openEntryModal(entry);
+                      }}
+                    >
+                      <div class="entry-content">
+                        <div class="entry-project">{entry.project}</div>
+                        <div class="entry-category">{entry.category}</div>
+                        <div class="entry-duration">{formatDuration(entry.duration)}</div>
+                      </div>
+                    </div>
+                    {/if}
+                  {/each}
+                {/if}
+
+                {#if formatDate(date) === formatDate(currentTime)}
+                  <div
+                    class="current-time-line"
+                    style="top: {getTimePosition(currentTime.toISOString())}px;"
+                  ></div>
+                {/if}
               </div>
             </div>
-
-            <div class="day-timeline">
-              {#each timelineHours as hour}
-                <div class="hour-row"></div>
-              {/each}
-
-              {#if weekData[formatDate(date)]?.entries}
-                {#each weekData[formatDate(date)].entries as entry (entry.id)}
-                  <div
-                    class="time-entry"
-                    style="
-                      top: {getTimePosition(entry.start_time)}px;
-                      height: {getDurationMinutes(entry.duration)}px;
-                    "
-                    title="{entry.project} - {entry.category} ({formatDuration(entry.duration)})"
-                  >
-                    <div class="entry-content">
-                      <div class="entry-project">{entry.project}</div>
-                      <div class="entry-category">{entry.category}</div>
-                      <div class="entry-duration">{formatDuration(entry.duration)}</div>
-                    </div>
-                  </div>
-                {/each}
-              {/if}
-
-              {#if formatDate(date) === formatDate(currentTime)}
-                <div
-                  class="current-time-line"
-                  style="top: {getTimePosition(currentTime.toISOString())}px;"
-                ></div>
-              {/if}
-            </div>
-          </div>
-        {/each}
+          {/each}
+        </div>
       </div>
     </div>
   </div>
 </div>
 
+<Modal
+  isOpen={modalOpen}
+  entry={selectedEntry}
+  selectedDate={selectedDate}
+  selectedTime={selectedTime}
+  on:close={handleModalClose}
+  on:entryCreated={handleEntryCreated}
+  on:entryUpdated={handleEntryUpdated}
+  on:entryDeleted={handleEntryDeleted}
+/>

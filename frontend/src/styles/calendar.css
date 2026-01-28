@@ -100,6 +100,8 @@
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 20px;
+  height: calc(100vh - 200px);
+  overflow: hidden;
 }
 
 .timer-section-inline {
@@ -108,20 +110,40 @@
   padding: 16px;
   height: fit-content;
   box-shadow: 0 2px 4px var(--shadow);
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 100;
   overflow: visible;
 }
 
 .timeline-wrapper {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow);
+  overflow: hidden;
+}
+
+.day-headers-row {
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr);
+  gap: 8px;
+  padding: 16px 16px 0 16px;
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-secondary);
+  z-index: 50;
+}
+
+.timeline-scroll-container {
   display: grid;
   grid-template-columns: 80px 1fr;
   gap: 8px;
-  background-color: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  box-shadow: 0 2px 4px var(--shadow);
+  padding: 0 16px 16px 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
 }
 
 .time-labels {
@@ -160,6 +182,10 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.day-header-placeholder {
+  height: 1px;
+}
+
 .day-name {
   font-weight: 700;
   font-size: 13px;
@@ -182,6 +208,12 @@
   position: relative;
   min-height: 1440px;
   background-color: var(--timeline-bg);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.day-timeline:hover {
+  background-color: var(--timeline-hover, var(--bg-secondary));
 }
 
 .hour-row {
@@ -203,12 +235,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
   z-index: 1;
 }
 
 .time-entry:hover {
-  opacity: 0.8;
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .entry-content {

@@ -13,6 +13,7 @@
   --accent-hover: #c96d06;
   --accent-secondary-hover: #7c3aed;
   --timeline-bg: #fafafa;
+  --timeline-hover: #f0f0f0;
   --entry-bg: #d97706;
   --entry-text: #ffffff;
   --current-time-line: #ff6b6b;
@@ -39,6 +40,7 @@
   --accent-hover: #e88817;
   --accent-secondary-hover: #7c3aed;
   --timeline-bg: #1a1a1a;
+  --timeline-hover: #252525;
   --entry-bg: #d97706;
   --entry-text: #ffffff;
   --current-time-line: #ff6b6b;

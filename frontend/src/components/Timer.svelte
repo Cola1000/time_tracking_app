@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import axios from 'axios';
+  import { timerStore } from '../stores/timer';
   import { getCustomProjects, getCustomCategories, addCustomProject, addCustomCategory } from '../utils/storage';
   import '../styles/timer.css';
 
@@ -9,55 +10,45 @@
   const dispatch = createEventDispatcher();
   const API_URL = 'http://localhost:8000/api';
 
-  let isRunning = false;
-  let startTime = null;
-  let elapsedSeconds = 0;
   let intervalId = null;
-
-  let formData = {
-    project: '',
-    category: '',
-    description: '',
-    startTime: new Date().toISOString().slice(0, 16),
-    endTime: null,
-  };
-
   let projects = [];
   let categories = [];
-  let customProjectInput = '';
-  let customCategoryInput = '';
+
+  $: ({ isRunning, startTime, elapsedSeconds, stoppedTime, project, category, description } = $timerStore);
 
   onMount(() => {
     projects = getCustomProjects();
     categories = getCustomCategories();
+
+    // Start the elapsed time updater if timer is running
+    if ($timerStore.isRunning && $timerStore.startTime) {
+      intervalId = setInterval(() => {
+        timerStore.setElapsed(Math.floor((Date.now() - $timerStore.startTime) / 1000));
+      }, 100);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   });
 
   function startTimer() {
-    isRunning = true;
-    startTime = Date.now();
+    timerStore.startTimer();
+    if (intervalId) clearInterval(intervalId);
     
     intervalId = setInterval(() => {
-      elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      timerStore.setElapsed(Math.floor((Date.now() - $timerStore.startTime) / 1000));
     }, 100);
   }
 
   function stopTimer() {
-    isRunning = false;
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-    formData.endTime = new Date().toISOString().slice(0, 16);
+    if (intervalId) clearInterval(intervalId);
+    timerStore.stopTimer();
   }
 
   function resetTimer() {
-    isRunning = false;
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-    elapsedSeconds = 0;
-    startTime = null;
-    formData.endTime = null;
-    formData.startTime = new Date().toISOString().slice(0, 16);
+    if (intervalId) clearInterval(intervalId);
+    timerStore.resetTimer();
   }
 
   function formatTime(seconds) {
@@ -65,42 +56,75 @@
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     
-    if (hours > 0) {
+    if (hours > 0) { // show hours only if greater than 0
       return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
     return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 
+  function formatLocalTime(date) {
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
   async function submitEntry() {
-    if (!formData.project || !formData.category) {
+    if (!project || !category) {
       alert('Please select a project and category');
       return;
     }
 
-    const duration = formData.endTime 
-      ? Math.floor((new Date(formData.endTime) - new Date(formData.startTime)) / 1000)
-      : elapsedSeconds;
+    if (elapsedSeconds <= 0) {
+      alert('Timer must be greater than 0');
+      return;
+    }
 
-    const endTime = formData.endTime || new Date().toISOString();
+    const startDate = new Date(Date.now() - elapsedSeconds * 1000);
+    const endDate = new Date();
 
     try {
       await axios.post(`${API_URL}/timers`, {
-        project: formData.project,
-        category: formData.category,
-        description: formData.description,
-        start_time: new Date(formData.startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
-        duration: duration,
+        project,
+        category,
+        description,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        duration: elapsedSeconds,
       });
 
       dispatch('timerAdded');
       resetTimer();
-      formData.project = '';
-      formData.category = '';
-      formData.description = '';
     } catch (error) {
       console.error('Error saving timer:', error);
       alert('Error saving timer entry');
+    }
+  }
+
+  function handleProjectChange(e) {
+    if (e.target.value === '__ADD_NEW__') {
+      const newProject = prompt('Enter new project name:');
+      if (newProject && newProject.trim()) {
+        addCustomProject(newProject.trim());
+        timerStore.setProject(newProject.trim());
+        projects = getCustomProjects();
+      } else {
+        timerStore.setProject('');
+      }
+    } else {
+      timerStore.setProject(e.target.value);
+    }
+  }
+
+  function handleCategoryChange(e) {
+    if (e.target.value === '__ADD_NEW__') {
+      const newCategory = prompt('Enter new category name:');
+      if (newCategory && newCategory.trim()) {
+        addCustomCategory(newCategory.trim());
+        timerStore.setCategory(newCategory.trim());
+        categories = getCustomCategories();
+      } else {
+        timerStore.setCategory('');
+      }
+    } else {
+      timerStore.setCategory(e.target.value);
     }
   }
 </script>
@@ -108,34 +132,46 @@
 <div class="timer-container">
   <div class="timer-display">{formatTime(elapsedSeconds)}</div>
   
+  {#if stoppedTime && !isRunning}
+    <div class="stopped-time">
+      Stopped at {formatLocalTime(stoppedTime)}
+    </div>
+  {/if}
+  
   <div class="timer-controls">
     <button 
       class="timer-btn start"
+      class:running={isRunning}
       on:click={isRunning ? stopTimer : startTimer}
     >
-      {isRunning ? 'Stop' : 'Start'}
+      {#if isRunning}
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2"/>
+        </svg>
+        <span>Stop</span>
+      {:else}
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>
+        </svg>
+        <span>Start</span>
+      {/if}
     </button>
-    <button class="timer-btn reset" on:click={resetTimer}>Reset</button>
+    <button class="timer-btn reset" on:click={resetTimer}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+      <span>Reset</span>
+    </button>
   </div>
 
   <div class="form-section">
     <div class="form-group">
       <label class="form-label">Project</label>
-      <select class="form-select" bind:value={formData.project} on:change={(e) => {
-        if (e.target.value === '__ADD_NEW__') {
-          const newProject = prompt('Enter new project name:');
-          if (newProject && newProject.trim()) {
-            addCustomProject(newProject.trim());
-            formData.project = newProject.trim();
-            projects = getCustomProjects();
-          } else {
-            formData.project = '';
-          }
-        }
-      }}>
+      <select class="form-select" value={project} on:change={handleProjectChange}>
         <option value="">Select a project...</option>
-        {#each projects as project}
-          <option value={project}>{project}</option>
+        {#each projects as proj}
+          <option value={proj}>{proj}</option>
         {/each}
         <option value="__ADD_NEW__">+ Add New Project</option>
       </select>
@@ -143,47 +179,30 @@
 
     <div class="form-group">
       <label class="form-label">Category</label>
-      <select class="form-select" bind:value={formData.category} on:change={(e) => {
-        if (e.target.value === '__ADD_NEW__') {
-          const newCategory = prompt('Enter new category name:');
-          if (newCategory && newCategory.trim()) {
-            addCustomCategory(newCategory.trim());
-            formData.category = newCategory.trim();
-            categories = getCustomCategories();
-          } else {
-            formData.category = '';
-          }
-        }
-      }}>
+      <select class="form-select" value={category} on:change={handleCategoryChange}>
         <option value="">Select a category...</option>
-        {#each categories as category}
-          <option value={category}>{category}</option>
+        {#each categories as cat}
+          <option value={cat}>{cat}</option>
         {/each}
         <option value="__ADD_NEW__">+ Add New Category</option>
       </select>
-  </div>
+    </div>
 
     <div class="form-group">
       <label class="form-label">Description (optional)</label>
       <textarea
         class="form-textarea"
-        bind:value={formData.description}
+        value={description}
+        on:change={(e) => timerStore.setDescription(e.target.value)}
         placeholder="What are you working on?"
         rows="3"
       ></textarea>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Start Time</label>
-      <input class="form-input" type="datetime-local" bind:value={formData.startTime} />
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">End Time</label>
-      <input class="form-input" type="datetime-local" bind:value={formData.endTime} />
-    </div>
-
-    <button class="save-btn" on:click={submitEntry}>Save Entry</button>
+    <button class="save-btn" on:click={submitEntry}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save-icon lucide-save"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+        <span>Save Entry</span>
+    </button>
   </div>
 </div>
 

@@ -9,6 +9,8 @@
   let selectedProject = null;
   let loading = false;
   let currentDate = new Date();
+  let searchQuery = '';
+  let filteredProjects = {};
 
   function formatDate(date) {
     return date.toISOString().split('T')[0];
@@ -60,6 +62,7 @@
       });
 
       allProjects = projects;
+      filteredProjects = projects; // Initialize filtered projects
     } catch (error) {
       console.error('Error loading projects:', error);
     }
@@ -88,6 +91,66 @@
     };
   }
 
+  async function deleteEntry(entryId, project, date) {
+    if (!confirm('Are you sure you want to delete this entry?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/timers/${entryId}`);
+      
+      // Remove entry from local state
+      allProjects[project] = allProjects[project].filter(e => e.id !== entryId);
+      
+      // If project has no more entries, remove it
+      if (allProjects[project].length === 0) {
+        delete allProjects[project];
+        if (selectedProject === project) {
+          selectedProject = null;
+        }
+      }
+      
+      allProjects = allProjects; // Trigger reactivity
+      filterProjects(); // Update filtered view
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      alert('Failed to delete entry. Please try again.');
+    }
+  }
+
+  function filterProjects() {
+    if (!searchQuery.trim()) {
+      filteredProjects = allProjects;
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = {};
+
+    Object.keys(allProjects).forEach(project => {
+      const matchingEntries = allProjects[project].filter(entry => {
+        const projectMatch = (entry.project || '').toLowerCase().includes(query);
+        const categoryMatch = (entry.category || '').toLowerCase().includes(query);
+        const descriptionMatch = (entry.description || '').toLowerCase().includes(query);
+        const dateMatch = entry.date.includes(query);
+        const formattedDateMatch = new Date(entry.date).toLocaleDateString('en-US').toLowerCase().includes(query);
+        
+        return projectMatch || categoryMatch || descriptionMatch || dateMatch || formattedDateMatch;
+      });
+
+      if (matchingEntries.length > 0) {
+        filtered[project] = matchingEntries;
+      }
+    });
+
+    filteredProjects = filtered;
+  }
+
+  $: {
+    searchQuery;
+    filterProjects();
+  }
+
   onMount(() => {
     loadAllProjects();
   });
@@ -97,17 +160,33 @@
   <div class="projects-header">
     <h2>Projects</h2>
     <p class="subtitle">View all your projects and their entries</p>
+    
+    <div class="search-container">
+      <input 
+        type="text" 
+        placeholder="Search by project, category, description, or date..." 
+        bind:value={searchQuery}
+        class="search-input"
+      />
+      {#if searchQuery}
+        <button class="clear-search" on:click={() => searchQuery = ''}>✕</button>
+      {/if}
+    </div>
   </div>
 
   {#if loading}
     <p class="loading">Loading projects...</p>
-  {:else if Object.keys(allProjects).length === 0}
+  {:else if Object.keys(filteredProjects).length === 0}
     <div class="empty-state">
-      <p>No projects found. Start tracking time to create projects!</p>
+      {#if searchQuery}
+        <p>No entries found matching "{searchQuery}"</p>
+      {:else}
+        <p>No projects found. Start tracking time to create projects!</p>
+      {/if}
     </div>
   {:else}
     <div class="projects-list">
-      {#each Object.keys(allProjects).sort() as project (project)}
+      {#each Object.keys(filteredProjects).sort() as project (project)}
         <div class="project-item">
           <div class="project-header" on:click={() => selectProject(project)}>
             <h3>{project}</h3>
@@ -130,7 +209,7 @@
 
           {#if selectedProject === project}
             <div class="project-entries">
-              {#each allProjects[project] as entry (entry.id)}
+              {#each filteredProjects[project] as entry (entry.id)}
                 <div class="entry-item">
                   <div class="entry-date-time">
                     <span class="date">{new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}</span>
@@ -150,6 +229,13 @@
                   <div class="entry-duration">
                     {formatDuration(entry.duration)}
                   </div>
+                  <button 
+                    class="delete-btn" 
+                    on:click={() => deleteEntry(entry.id, project, entry.date)}
+                    title="Delete entry"
+                  >
+                    🗑️
+                  </button>
                 </div>
               {/each}
             </div>
