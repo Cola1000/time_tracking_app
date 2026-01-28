@@ -77,23 +77,36 @@
       return;
     }
 
-    const startDate = new Date(Date.now() - elapsedSeconds * 1000);
     const endDate = new Date();
+    const startDate = new Date(Date.now() - elapsedSeconds * 1000);
+    
+    // Use local date format (YYYY-MM-DD) based on when the timer ENDED
+    const year = endDate.getFullYear();
+    const month = String(endDate.getMonth() + 1).padStart(2, '0');
+    const day = String(endDate.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
 
     try {
-      await axios.post(`${API_URL}/timers`, {
+      const payload = {
         project,
         category,
         description,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         duration: elapsedSeconds,
-      });
+        date: dateKey,
+      };
+      
+      console.log('Submitting timer entry:', payload);
+      await axios.post(`${API_URL}/timers`, payload);
 
       dispatch('timerAdded');
       resetTimer();
     } catch (error) {
       console.error('Error saving timer:', error);
+      if (error.response?.data) {
+        console.error('Validation errors:', error.response.data);
+      }
       alert('Error saving timer entry');
     }
   }

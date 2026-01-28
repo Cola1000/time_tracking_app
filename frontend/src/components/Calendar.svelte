@@ -18,7 +18,7 @@
   let selectedTime = null; // Time when clicking on timeline
 
   const API_URL = 'http://localhost:8000/api';
-  const MIN_ENTRY_DURATION = 1800; // 30 minutes in seconds - entries shorter than this won't display on calendar
+  const MIN_ENTRY_DURATION = 900; // 15 minutes in seconds - entries shorter than this won't display on calendar
 
   function getWeekStart(date) {
     const d = new Date(date);
