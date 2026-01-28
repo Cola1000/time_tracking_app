@@ -238,34 +238,36 @@
     </div>
 
     {#if dayEntries.length > 0}
-      <div class="pie-chart-container">
-        <h3>
-          Project Breakdown for {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-        </h3>
-        <canvas bind:this={pieChartCanvas}></canvas>
-      </div>
-
-      <div class="entries-breakdown">
-        <h3>Daily Entries</h3>
-        <div class="entries-grid">
-          {#each dayEntries as entry (entry.id)}
-            <div class="entry-card">
-              <div class="entry-header">
-                <span class="project-tag">{entry.project || 'Uncategorized'}</span>
-                <span class="category-tag">{entry.category || 'Uncategorized'}</span>
-              </div>
-              {#if entry.description}
-                <p class="entry-description">{entry.description}</p>
-              {/if}
-              <div class="entry-time">
-                <span>{new Date(entry.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                {#if entry.end_time}
-                  <span>→ {new Date(entry.end_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+      <div class="detail-section">
+        <div class="entries-breakdown">
+          <h3>Daily Entries</h3>
+          <div class="entries-list">
+            {#each dayEntries as entry (entry.id)}
+              <div class="entry-card">
+                <div class="entry-header">
+                  <span class="project-tag">{entry.project || 'Uncategorized'}</span>
+                  <span class="category-tag">{entry.category || 'Uncategorized'}</span>
+                </div>
+                {#if entry.description}
+                  <p class="entry-description">{entry.description}</p>
                 {/if}
+                <div class="entry-time">
+                  <span>{new Date(entry.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                  {#if entry.end_time}
+                    <span>→ {new Date(entry.end_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                  {/if}
+                </div>
+                <div class="entry-duration">{formatDuration(entry.duration)}</div>
               </div>
-              <div class="entry-duration">{formatDuration(entry.duration)}</div>
-            </div>
-          {/each}
+            {/each}
+          </div>
+        </div>
+
+        <div class="pie-chart-container">
+          <h3>
+            Project Breakdown for {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </h3>
+          <canvas bind:this={pieChartCanvas}></canvas>
         </div>
       </div>
     {:else}
@@ -347,20 +349,32 @@
     text-align: center;
   }
 
+  .detail-section {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 20px;
+  }
+
   .pie-chart-container {
     background-color: #f8f9fa;
     border-radius: 8px;
     padding: 20px;
     border: 1px solid #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .pie-chart-container h3 {
     margin: 0 0 20px 0;
     color: #2c3e50;
+    font-size: 14px;
+    text-align: center;
   }
 
   .pie-chart-container canvas {
     max-width: 100%;
+    max-height: 300px;
   }
 
   .entries-breakdown {
@@ -375,24 +389,27 @@
     color: #2c3e50;
   }
 
-  .entries-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+  .entries-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 500px;
+    overflow-y: auto;
   }
 
   .entry-card {
     background-color: white;
     border: 1px solid #ecf0f1;
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: 6px;
+    padding: 12px;
     border-left: 4px solid #4CAF50;
+    font-size: 13px;
   }
 
   .entry-header {
     display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 6px;
+    margin-bottom: 8px;
     flex-wrap: wrap;
   }
 
@@ -400,9 +417,9 @@
     display: inline-block;
     background-color: #4CAF50;
     color: white;
-    padding: 4px 12px;
+    padding: 3px 10px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 500;
   }
 
@@ -410,31 +427,31 @@
     display: inline-block;
     background-color: #2196F3;
     color: white;
-    padding: 4px 12px;
+    padding: 3px 10px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 500;
   }
 
   .entry-description {
-    margin: 8px 0;
+    margin: 6px 0;
     color: #2c3e50;
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .entry-time {
     display: flex;
-    gap: 8px;
-    font-size: 12px;
+    gap: 6px;
+    font-size: 11px;
     color: #7f8c8d;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     flex-wrap: wrap;
   }
 
   .entry-duration {
     font-weight: 600;
     color: #4CAF50;
-    font-size: 16px;
+    font-size: 13px;
   }
 
   .empty-state {
@@ -443,9 +460,20 @@
     color: #95a5a6;
   }
 
-  @media (max-width: 768px) {
-    .entries-grid {
+  @media (max-width: 1024px) {
+    .detail-section {
       grid-template-columns: 1fr;
+    }
+
+    .pie-chart-container {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .entries-list {
+      max-height: none;
     }
   }
 </style>
