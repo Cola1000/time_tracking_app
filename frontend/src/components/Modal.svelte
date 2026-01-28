@@ -36,6 +36,15 @@
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
+  function localDatetimeStringToDate(dateTimeString) {
+    // Convert datetime-local string (YYYY-MM-DDTHH:mm) to Date object in local timezone
+    // This properly interprets the string as local time, not UTC
+    const [datePart, timePart] = dateTimeString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+    return new Date(year, month - 1, day, hours, minutes, 0, 0);
+  }
+
   function initializeForm() {
     if (entry) {
       // Edit mode
@@ -97,8 +106,8 @@
 
     isSubmitting = true;
     try {
-      const startDate = new Date(startTime);
-      const endDate = new Date(endTime);
+      const startDate = localDatetimeStringToDate(startTime);
+      const endDate = localDatetimeStringToDate(endTime);
       const duration = Math.floor((endDate - startDate) / 1000);
 
       if (duration <= 0) {
@@ -107,9 +116,9 @@
         return;
       }
 
-      // Check for overlaps
-      const dateKey = startDate.toISOString().split('T')[0];
-      const overlaps = await checkOverlaps(startDate, endDate, dateKey);
+      // Get the local date for API call (use local date, not UTC)
+      const localDateString = dateToLocalDatetimeString(startDate).split('T')[0];
+      const overlaps = await checkOverlaps(startDate, endDate, localDateString);
       
       if (overlaps.length > 0) {
         const overlapDetails = overlaps.map(e => 
@@ -137,6 +146,7 @@
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         duration: duration,
+        date: localDateString,  // Send the intended date explicitly
       };
 
       if (entry && entry.id) {

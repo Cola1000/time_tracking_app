@@ -19,6 +19,7 @@ class TimerCreate(BaseModel):
     start_time: datetime
     end_time: Optional[datetime] = None
     duration: int
+    date: str  # YYYY-MM-DD format - explicit date to avoid timezone issues
 
 class DayActivitySummary(BaseModel):
     date: str

@@ -74,14 +74,16 @@
   }
 
   function previousWeek() {
-    weekStart.setDate(weekStart.getDate() - 7);
-    weekStart = weekStart;
+    const newDate = new Date(weekStart);
+    newDate.setDate(newDate.getDate() - 7);
+    weekStart = newDate;
     loadWeekData();
   }
 
   function nextWeek() {
-    weekStart.setDate(weekStart.getDate() + 7);
-    weekStart = weekStart;
+    const newDate = new Date(weekStart);
+    newDate.setDate(newDate.getDate() + 7);
+    weekStart = newDate;
     loadWeekData();
   }
 
@@ -306,7 +308,7 @@
             class="day-btn {formatDate(date) === selectedDate ? 'active' : ''}"
             on:click={() => selectDay(date)}
           >
-            {getDayName(date)}<br/>{getFormattedDate(date)}
+            {getDayName(date)}
           </button>
         {/each}
       </div>
@@ -343,6 +345,7 @@
             Project Breakdown for {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </h3>
           <canvas bind:this={pieChartCanvas}></canvas>
+          <p>if there's nothing here, press the day again</p>
         </div>
       {:else}
         <div class="empty-section">

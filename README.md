@@ -74,29 +74,27 @@ chmod +x start.sh
 - Demo GIF
 ![demo GIF](screenshots/demo.gif)
 
-> **There's also a light mode!**
-
 ---
 
 # Nerd Stuff
 
 ## Features
 
-✅ **Start/Stop Timer** - Real-time timer with pause and reset  
-✅ **Manual Entry** - Create time entries manually with custom times  
-✅ **Click to Create Entry** - Click anywhere on calendar to create a new entry via modal  
-✅ **Click to Edit/Delete** - Click on any entry to edit or delete it  
-✅ **Projects & Categories** - Organize time entries by project and category  
-✅ **Weekly Calendar View** - Toggl-style calendar divided by week and day  
-✅ **Daily Reports** - Bar and pie charts showing time breakdown  
-✅ **Project Overview** - View all projects with expandable entry history  
-✅ **Light/Dark Mode** - Toggle between themes via UI or startup flag  
-✅ **Custom Projects** - Add and persist custom projects using localStorage  
-✅ **JSON Storage** - All data saved locally as JSON files (no database needed)  
-✅ **Robust Data Handling** - Auto-corrects total_duration if entries deleted from JSON  
-✅ **Auto-updating Timer** - Start time always shows current time when timer is inactive  
-✅ **Responsive Design** - Works on desktop and mobile browsers  
-✅ **Auto Browser Launch** - Automatically opens browser on startup  
+-  **Start/Stop Timer** - Real-time timer with pause and reset  
+-  **Manual Entry** - Create time entries manually with custom times  
+-  **Click to Create Entry** - Click anywhere on calendar to create a new entry via modal  
+-  **Click to Edit/Delete** - Click on any entry to edit or delete it  
+-  **Projects & Categories** - Organize time entries by project and category  
+-  **Weekly Calendar View** - Toggl-style calendar divided by week and day  
+-  **Daily Reports** - Bar and pie charts showing time breakdown  
+-  **Project Overview** - View all projects with expandable entry history  
+-  **Light/Dark Mode** - Toggle between themes via UI or startup flag  
+-  **Custom Projects** - Add and persist custom projects using localStorage  
+-  **JSON Storage** - All data saved locally as JSON files (no database needed)  
+-  **Robust Data Handling** - Auto-corrects total_duration if entries deleted from JSON  
+-  **Auto-updating Timer** - Start time always shows current time when timer is inactive  
+-  **Responsive Design** - Works on desktop and mobile browsers  
+-  **Auto Browser Launch** - Automatically opens browser on startup  
 
 ## Tech Stack
 

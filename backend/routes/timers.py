@@ -41,7 +41,7 @@ def ensure_total_duration(date: str, day_data: dict) -> dict:
 def create_timer(timer: TimerCreate):
     """Create a new timer entry"""
     entry_id = str(uuid.uuid4())
-    date = timer.start_time.strftime("%Y-%m-%d")
+    date = timer.date  # Use the date provided by client to avoid timezone issues
     
     entry_dict = {
         "id": entry_id,
