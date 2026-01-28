@@ -264,7 +264,7 @@ docker-compose build --no-cache
     <table align="center">
     <tr>
         <th align="center">User</th>
-        <th align="center">Job</th>
+        <th align="center">Feature</th>
     </tr>
     <tr>
         <td align="center">
@@ -273,7 +273,7 @@ docker-compose build --no-cache
             <sub><b>Cola1000</b></sub>
         </a>
         </td>
-        <td align="center">Everything</td>
+        <td align="center">idk</td>
     </tr>
     </table>
 </div>
