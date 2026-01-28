@@ -190,8 +190,6 @@
     </div>
   </div>
 
-  <div class="input-section">INPUT</div>
-
   <div class="timeline-container">
     <div class="timer-section-inline">
       <Timer activeDay={formatDate(new Date())} on:timerAdded={() => loadWeekData()} />
