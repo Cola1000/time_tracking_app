@@ -173,15 +173,14 @@
       ></textarea>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Start Time</label>
-        <input class="form-input" type="datetime-local" bind:value={formData.startTime} />
-      </div>
-      <div class="form-group">
-        <label class="form-label">End Time</label>
-        <input class="form-input" type="datetime-local" bind:value={formData.endTime} />
-      </div>
+    <div class="form-group">
+      <label class="form-label">Start Time</label>
+      <input class="form-input" type="datetime-local" bind:value={formData.startTime} />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">End Time</label>
+      <input class="form-input" type="datetime-local" bind:value={formData.endTime} />
     </div>
 
     <button class="save-btn" on:click={submitEntry}>Save Entry</button>

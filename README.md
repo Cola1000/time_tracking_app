@@ -1,4 +1,4 @@
-# Time Tracking App 🕐
+# Time Tracking App
 
 A local time tracking application built with FastAPI (Python) backend, Svelte frontend, and Docker. No authentication required - designed to run locally on your browser with JSON file storage.
 

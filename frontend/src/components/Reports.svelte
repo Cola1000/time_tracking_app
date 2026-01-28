@@ -215,20 +215,11 @@
 
 <div class="reports-container">
   <div class="reports-header">
-    <h2>Reports</h2>
-    <p class="week-range">
-      Week of {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-    </p>
-  </div>
-
-  <div class="week-navigation">
-    <button on:click={previousWeek}>← Previous</button>
-    <button on:click={() => {
-      weekStart = getWeekStart(new Date());
-      selectedDate = formatDate(new Date());
-      loadWeekData();
-    }}>Today</button>
-    <button on:click={nextWeek}>Next →</button>
+    <div class="week-selector">
+      <button on:click={previousWeek}>‹</button>
+      <span>Week of {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+      <button on:click={nextWeek}>›</button>
+    </div>
   </div>
 
   <div class="charts-section">

@@ -7,6 +7,38 @@
 
 .reports-header {
   margin-bottom: 24px;
+  padding: 16px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+.week-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.week-selector button {
+  background: none;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.week-selector button:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.week-selector span {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 .reports-title {
