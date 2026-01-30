@@ -60,6 +60,10 @@ chmod +x start.sh
 ## ./start.sh dark
 ```
 
+> **Note**: 
+> - The **default port** is **5173** for frontend and **8000** for backend, if that port is in use or you want to **change it**. Consider looking to **[Ports](#ports)**
+
+
 ## Screenshots
 
 - Time Tracker
@@ -77,6 +81,8 @@ chmod +x start.sh
 ---
 
 # Nerd Stuff
+
+---
 
 ## Features
 
@@ -96,6 +102,8 @@ chmod +x start.sh
 -  **Responsive Design** - Works on desktop and mobile browsers  
 -  **Auto Browser Launch** - Automatically opens browser on startup  
 
+---
+
 ## Tech Stack
 
 - **Backend**: FastAPI (Python 3.11)
@@ -103,6 +111,8 @@ chmod +x start.sh
 - **Charts**: Chart.js
 - **Storage**: JSON files (local) + localStorage
 - **Containerization**: Docker & Docker Compose
+
+---
 
 ## Project Structure
 
@@ -147,6 +157,8 @@ time_tracking_app/
 └── start.sh               # Linux/Mac startup script
 ```
 
+---
+
 ## About Quick Start
 
 The bat/bash script will:
@@ -154,6 +166,8 @@ The bat/bash script will:
 - Build and start both containers
 - Automatically open your browser to http://localhost:5173
 - Display the app in your chosen theme
+
+---
 
 ## Local Development
 
@@ -173,10 +187,42 @@ npm run dev
 # Frontend runs on http://localhost:5173
 ```
 
+---
+
+## Ports
+
+To change the ports used by the Time Tracking App, simply edit the `ports.conf` file:
+
+```bash
+# Frontend port (default: 5173)
+FRONTEND_PORT=5173
+
+# Backend port (default: 8000)
+BACKEND_PORT=8000
+```
+
+### Example: Change to different ports
+
+```bash
+FRONTEND_PORT=3000
+BACKEND_PORT=5000
+```
+
+After changing the ports, restart the containers:
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+The application will automatically use the new ports specified in `ports.conf`.
+
 Themes are managed through:
 - CSS custom properties in `frontend/src/styles/theme.css`
 - Svelte store in `frontend/src/stores/theme.js`
 - localStorage for persistence across sessions
+
+---
 
 ## API Endpoints
 
@@ -191,6 +237,8 @@ Themes are managed through:
 
 ### Statistics
 - `GET /api/stats/week/{start_date}` - Get weekly statistics with project/category breakdown
+
+---
 
 ## Data Storage
 
@@ -218,6 +266,8 @@ Example JSON structure:
 }
 ```
 
+---
+
 ## Development
 
 ### Add New Features
@@ -234,6 +284,8 @@ Example JSON structure:
 ```bash
 docker-compose build --no-cache
 ```
+
+---
 
 ## Troubleshooting
 

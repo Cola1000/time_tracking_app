@@ -5,11 +5,14 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
     volumes:
       - ./backend/data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
+      - BACKEND_PORT=${BACKEND_PORT:-8000}
+    env_file:
+      - ports.conf
     networks:
       - time-tracker-network
 
@@ -21,14 +24,17 @@ services:
         - VITE_THEME=${VITE_THEME:-dark}
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:${FRONTEND_PORT:-5173}"
     depends_on:
       - backend
     networks:
       - time-tracker-network
     environment:
-      - VITE_API_URL=http://localhost:8000/api
+      - VITE_API_URL=http://localhost:${BACKEND_PORT:-8000}/api
       - VITE_THEME=${VITE_THEME:-dark}
+      - FRONTEND_PORT=${FRONTEND_PORT:-5173}
+    env_file:
+      - ports.conf
 
 networks:
   time-tracker-network:
