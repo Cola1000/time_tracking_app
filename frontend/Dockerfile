@@ -23,4 +23,4 @@ RUN npm install -g serve
 
 EXPOSE 5173
 
-CMD ["serve", "-s", "dist", "-l", "5173"]
+CMD ["sh", "-c", "serve -s dist -l ${FRONTEND_PORT:-5173}"]

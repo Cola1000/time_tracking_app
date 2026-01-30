@@ -11,6 +11,10 @@ set THEME=dark
 if "%1"=="light" set THEME=light
 if "%1"=="dark" set THEME=dark
 
+REM Read ports from ports.conf
+set FRONTEND_PORT=5173
+for /f "tokens=2 delims==" %%i in ('findstr "FRONTEND_PORT" ports.conf 2^>nul') do set FRONTEND_PORT=%%i
+
 REM Check if Docker is installed
 docker --version >nul 2>&1
 if errorlevel 1 (
@@ -33,7 +37,7 @@ echo [OK] Docker is running
 echo.
 echo Starting Time Tracking App with %THEME% theme...
 echo.
-echo The app will be available at: http://localhost:5173
+echo The app will be available at: http://localhost:%FRONTEND_PORT%
 echo Press Ctrl+C to stop the app
 echo.
 
@@ -50,7 +54,7 @@ timeout /t 5 /nobreak >nul
 
 REM Open browser
 echo Opening browser...
-start http://localhost:5173
+start http://localhost:%FRONTEND_PORT%
 
 echo.
 echo App is running! Close this window or press Ctrl+C to stop.
