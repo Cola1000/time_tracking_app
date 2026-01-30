@@ -5,7 +5,7 @@
   import { getColors } from '../utils/storage';
   import '../styles/reports.css';
 
-  const API_URL = 'http://localhost:8000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
   let weekStart = getWeekStart(new Date());
   let selectedDate = new Date().toISOString().split('T')[0];

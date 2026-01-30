@@ -13,9 +13,13 @@ fi
 
 # Read ports from ports.conf
 FRONTEND_PORT=5173
+BACKEND_PORT=8000
 if [ -f "ports.conf" ]; then
     FRONTEND_PORT=$(grep -oP 'FRONTEND_PORT=\K[0-9]+' ports.conf || echo "5173")
+    BACKEND_PORT=$(grep -oP 'BACKEND_PORT=\K[0-9]+' ports.conf || echo "8000")
 fi
+export FRONTEND_PORT
+export BACKEND_PORT
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
@@ -36,6 +40,7 @@ echo ""
 echo "Starting Time Tracking App with $THEME theme..."
 echo ""
 echo "The app will be available at: http://localhost:$FRONTEND_PORT"
+echo "Backend API expected at:    http://localhost:$BACKEND_PORT/api"
 echo "Press Ctrl+C to stop the app"
 echo ""
 

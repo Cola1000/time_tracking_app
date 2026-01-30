@@ -8,7 +8,7 @@
   export let activeDay;
 
   const dispatch = createEventDispatcher();
-  const API_URL = 'http://localhost:8000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
   let intervalId = null;
   let projects = [];

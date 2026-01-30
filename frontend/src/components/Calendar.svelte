@@ -19,7 +19,7 @@
   let selectedTime = null; // Time when clicking on timeline
   let colors = { project_colors: {}, category_colors: {} };
 
-  const API_URL = 'http://localhost:8000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
   const MIN_ENTRY_DURATION = 900; // 15 minutes in seconds - entries shorter than this won't display on calendar
 
   function getWeekStart(date) {

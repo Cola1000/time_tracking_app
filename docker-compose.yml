@@ -21,7 +21,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_THEME=${VITE_THEME:-dark}
+        VITE_THEME: ${VITE_THEME:-dark}
+        VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}/api
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-5173}:${FRONTEND_PORT:-5173}"
