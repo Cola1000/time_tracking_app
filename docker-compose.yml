@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
@@ -18,6 +19,7 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_THEME=${VITE_THEME:-dark}
+    restart: unless-stopped
     ports:
       - "5173:5173"
     depends_on:
