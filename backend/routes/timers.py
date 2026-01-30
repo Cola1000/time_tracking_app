@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models.timer import TimerEntry, TimerCreate, DayActivitySummary, ProjectListSync, CategoryListSync, SettingName, ColorUpdate
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os
 import uuid
@@ -9,6 +9,7 @@ router = APIRouter()
 
 DATA_DIR = "data"
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
+ACTIVE_TIMER_FILE = os.path.join(DATA_DIR, "active_timer.json")
 
 def get_data_file(date: str) -> str:
     """Get the path to the data file for a given date (YYYY-MM-DD)"""
@@ -28,6 +29,22 @@ def save_day_data(date: str, data: dict) -> None:
     with open(file_path, 'w') as f:
         json.dump(data, f, indent=2)
 
+def load_active_timer() -> dict | None:
+    """Load the currently active timer from file"""
+    if os.path.exists(ACTIVE_TIMER_FILE):
+        with open(ACTIVE_TIMER_FILE, 'r') as f:
+            return json.load(f)
+    return None
+
+def save_active_timer(timer_data: dict | None) -> None:
+    """Save the active timer to file"""
+    if timer_data is None:
+        if os.path.exists(ACTIVE_TIMER_FILE):
+            os.remove(ACTIVE_TIMER_FILE)
+    else:
+        with open(ACTIVE_TIMER_FILE, 'w') as f:
+            json.dump(timer_data, f, indent=2)
+
 def calculate_total_duration(entries: list) -> int:
     """Calculate total duration from entries in seconds"""
     return sum(entry.get("duration", 0) for entry in entries)
@@ -37,6 +54,114 @@ def ensure_total_duration(date: str, day_data: dict) -> dict:
     entries = day_data.get("entries", [])
     day_data["total_duration"] = calculate_total_duration(entries)
     return day_data
+
+# ==================== ACTIVE TIMER ENDPOINTS ====================
+
+@router.get("/timer/active")
+def get_active_timer():
+    """Get the currently running timer, if any"""
+    timer = load_active_timer()
+    if timer is None:
+        return {"active": False, "timer": None}
+    
+    # Calculate current elapsed time
+    start_time = datetime.fromisoformat(timer["start_time"])
+    now = datetime.now(timezone.utc)
+    elapsed = int((now - start_time).total_seconds())
+    
+    return {
+        "active": True,
+        "timer": {
+            **timer,
+            "elapsed": elapsed
+        }
+    }
+
+@router.post("/timer/start")
+def start_timer(project: str = "", category: str = "", description: str = ""):
+    """Start a new timer on the backend"""
+    # Check if there's already an active timer
+    existing = load_active_timer()
+    if existing:
+        raise HTTPException(status_code=400, detail="A timer is already running")
+    
+    now = datetime.now(timezone.utc)
+    timer_data = {
+        "id": str(uuid.uuid4()),
+        "project": project,
+        "category": category,
+        "description": description,
+        "start_time": now.isoformat(),
+        "date": now.strftime("%Y-%m-%d")
+    }
+    
+    save_active_timer(timer_data)
+    return {"message": "Timer started", "timer": timer_data}
+
+@router.put("/timer/update")
+def update_active_timer(project: str = None, category: str = None, description: str = None):
+    """Update the currently running timer's details"""
+    timer = load_active_timer()
+    if timer is None:
+        raise HTTPException(status_code=404, detail="No active timer")
+    
+    if project is not None:
+        timer["project"] = project
+    if category is not None:
+        timer["category"] = category
+    if description is not None:
+        timer["description"] = description
+    
+    save_active_timer(timer)
+    return {"message": "Timer updated", "timer": timer}
+
+@router.post("/timer/stop")
+def stop_timer():
+    """Stop the current timer and save as an entry"""
+    timer = load_active_timer()
+    if timer is None:
+        raise HTTPException(status_code=404, detail="No active timer")
+    
+    start_time = datetime.fromisoformat(timer["start_time"])
+    end_time = datetime.now(timezone.utc)
+    duration = int((end_time - start_time).total_seconds())
+    
+    # Use the start date for the entry
+    date = timer["date"]
+    
+    entry_dict = {
+        "id": timer["id"],
+        "project": timer["project"],
+        "category": timer["category"],
+        "description": timer["description"],
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+        "duration": duration,
+        "date": date
+    }
+    
+    # Save the entry
+    day_data = load_day_data(date)
+    day_data["entries"].append(entry_dict)
+    day_data["total_duration"] = calculate_total_duration(day_data["entries"])
+    save_day_data(date, day_data)
+    
+    # Clear the active timer
+    save_active_timer(None)
+    
+    return {"message": "Timer stopped", "entry": entry_dict}
+
+@router.delete("/timer/discard")
+def discard_timer():
+    """Discard the current timer without saving"""
+    timer = load_active_timer()
+    if timer is None:
+        raise HTTPException(status_code=404, detail="No active timer")
+    
+    save_active_timer(None)
+    return {"message": "Timer discarded"}
+
+# ==================== TIMER ENTRIES ENDPOINTS ====================
 
 @router.post("/timers", response_model=TimerEntry)
 def create_timer(timer: TimerCreate):

@@ -13,18 +13,21 @@
   let intervalId = null;
   let projects = [];
   let categories = [];
+  let syncing = true;
 
-  $: ({ isRunning, startTime, elapsedSeconds, stoppedTime, project, category, description } = $timerStore);
+  $: ({ isRunning, startTime, elapsedSeconds, stoppedTime, project, category, description, synced } = $timerStore);
 
-  onMount(() => {
+  onMount(async () => {
     projects = getCustomProjects();
     categories = getCustomCategories();
 
+    // Try to sync with backend timer first
+    const hasBackendTimer = await timerStore.syncWithBackend();
+    syncing = false;
+    
     // Start the elapsed time updater if timer is running
     if ($timerStore.isRunning && $timerStore.startTime) {
-      intervalId = setInterval(() => {
-        timerStore.setElapsed(Math.floor((Date.now() - $timerStore.startTime) / 1000));
-      }, 100);
+      startElapsedUpdater();
     }
 
     return () => {
@@ -32,13 +35,18 @@
     };
   });
 
-  function startTimer() {
-    timerStore.startTimer();
+  function startElapsedUpdater() {
     if (intervalId) clearInterval(intervalId);
-    
     intervalId = setInterval(() => {
-      timerStore.setElapsed(Math.floor((Date.now() - $timerStore.startTime) / 1000));
+      if ($timerStore.startTime) {
+        timerStore.setElapsed(Math.floor((Date.now() - $timerStore.startTime) / 1000));
+      }
     }, 100);
+  }
+
+  async function startTimer() {
+    await timerStore.startTimer();
+    startElapsedUpdater();
   }
 
   function stopTimer() {
@@ -46,9 +54,9 @@
     timerStore.stopTimer();
   }
 
-  function resetTimer() {
+  async function resetTimer() {
     if (intervalId) clearInterval(intervalId);
-    timerStore.resetTimer();
+    await timerStore.resetTimer();
   }
 
   function formatTime(seconds) {
@@ -77,16 +85,28 @@
       return;
     }
 
-    const endDate = new Date();
-    const startDate = new Date(Date.now() - elapsedSeconds * 1000);
-    
-    // Use local date format (YYYY-MM-DD) based on when the timer ENDED
-    const year = endDate.getFullYear();
-    const month = String(endDate.getMonth() + 1).padStart(2, '0');
-    const day = String(endDate.getDate()).padStart(2, '0');
-    const dateKey = `${year}-${month}-${day}`;
-
     try {
+      // If we have a synced backend timer, use the backend stop endpoint
+      if ($timerStore.synced && $timerStore.backendId) {
+        // First update project/category if needed
+        await axios.put(`${API_URL}/timer/update`, null, {
+          params: { project, category, description }
+        });
+        await timerStore.submitToBackend();
+        dispatch('timerAdded');
+        return;
+      }
+
+      // Fallback to direct submission
+      const endDate = new Date();
+      const startDate = new Date(Date.now() - elapsedSeconds * 1000);
+      
+      // Use local date format (YYYY-MM-DD) based on when the timer ENDED
+      const year = endDate.getFullYear();
+      const month = String(endDate.getMonth() + 1).padStart(2, '0');
+      const day = String(endDate.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+
       const payload = {
         project,
         category,
@@ -101,7 +121,7 @@
       await axios.post(`${API_URL}/timers`, payload);
 
       dispatch('timerAdded');
-      resetTimer();
+      await resetTimer();
     } catch (error) {
       console.error('Error saving timer:', error);
       if (error.response?.data) {
@@ -116,13 +136,13 @@
       const newProject = prompt('Enter new project name:');
       if (newProject && newProject.trim()) {
         await addCustomProject(newProject.trim());
-        timerStore.setProject(newProject.trim());
+        await timerStore.setProject(newProject.trim());
         projects = getCustomProjects();
       } else {
-        timerStore.setProject('');
+        await timerStore.setProject('');
       }
     } else {
-      timerStore.setProject(e.target.value);
+      await timerStore.setProject(e.target.value);
     }
   }
 
@@ -131,19 +151,28 @@
       const newCategory = prompt('Enter new category name:');
       if (newCategory && newCategory.trim()) {
         await addCustomCategory(newCategory.trim());
-        timerStore.setCategory(newCategory.trim());
+        await timerStore.setCategory(newCategory.trim());
         categories = getCustomCategories();
       } else {
-        timerStore.setCategory('');
+        await timerStore.setCategory('');
       }
     } else {
-      timerStore.setCategory(e.target.value);
+      await timerStore.setCategory(e.target.value);
     }
   }
 </script>
 
 <div class="timer-container">
-  <div class="timer-display">{formatTime(elapsedSeconds)}</div>
+  {#if syncing}
+    <div class="timer-display syncing">Syncing...</div>
+  {:else}
+    <div class="timer-display">
+      {formatTime(elapsedSeconds)}
+      {#if isRunning && synced}
+        <span class="sync-indicator" title="Timer synced with server">⚡</span>
+      {/if}
+    </div>
+  {/if}
   
   {#if stoppedTime && !isRunning}
     <div class="stopped-time">

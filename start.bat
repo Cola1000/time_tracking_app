@@ -13,7 +13,9 @@ if "%1"=="dark" set THEME=dark
 
 REM Read ports from ports.conf
 set FRONTEND_PORT=5173
+set BACKEND_PORT=8000
 for /f "tokens=2 delims==" %%i in ('findstr "FRONTEND_PORT" ports.conf 2^>nul') do set FRONTEND_PORT=%%i
+for /f "tokens=2 delims==" %%i in ('findstr "BACKEND_PORT" ports.conf 2^>nul') do set BACKEND_PORT=%%i
 
 REM Check if Docker is installed
 docker --version >nul 2>&1
